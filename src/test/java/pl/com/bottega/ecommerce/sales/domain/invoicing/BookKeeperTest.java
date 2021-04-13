@@ -110,4 +110,18 @@ class BookKeeperTest {
         assertEquals(money, moneyList.get(1));
     }
 
+
+    @Test
+    void returnZeroItemsForInvoiceWithNoItems() {
+
+        InvoiceRequest request = new InvoiceRequest(SAMPLE_CLIENT_DATA);
+        when(factory.create(SAMPLE_CLIENT_DATA)).thenReturn(new Invoice(Id.generate(), SAMPLE_CLIENT_DATA));
+
+        Invoice actualInvoice = keeper.issuance(request, taxPolicy);
+
+        int expectedCount = 0;
+        int actualInvoiceCount = actualInvoice.getItems().size();
+        assertEquals(expectedCount, actualInvoiceCount);
+    }
+
 }
