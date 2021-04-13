@@ -40,6 +40,10 @@ class BookKeeperTest {
     @Captor
     ArgumentCaptor<Money> moneyArgumentCaptor;
 
+    @Captor
+    ArgumentCaptor<ClientData> clientDataArgumentCaptor;
+
+
     private BookKeeper keeper;
 
     @BeforeEach
@@ -133,6 +137,48 @@ class BookKeeperTest {
         keeper.issuance(request, taxPolicy);
 
         verify(taxPolicy, times(0)).calculateTax(any(ProductType.class), any(Money.class));
+    }
+
+    @Test
+    void checkTaxForNewItem() {
+
+        var sapmleTax =new Tax(
+                SAMPLE_MONEY,
+                SAMPLE_TAX_DESCRIPTION
+        );
+
+        InvoiceRequest request = new InvoiceRequest(SAMPLE_CLIENT_DATA);
+        ProductData productData = new ProductDataBuilder()
+                .productId(Id.generate())
+                .name(SAMPLE_PRODUCT_DATA_NAME)
+                .price(SAMPLE_MONEY)
+                .snapshotDate(new Date())
+                .type(ProductType.FOOD)
+                .build();
+        when(factory.create(SAMPLE_CLIENT_DATA)).thenReturn(new Invoice(Id.generate(), SAMPLE_CLIENT_DATA));
+        when(taxPolicy.calculateTax(any(ProductType.class), any(Money.class))).thenReturn(sapmleTax);
+        RequestItem item = new RequestItem(productData, 1, SAMPLE_MONEY);
+        request.add(item);
+
+        Invoice actualInvoice = keeper.issuance(request, taxPolicy);
+
+        Tax actualTax = actualInvoice.getItems().get(0).getTax();
+        assertEquals(sapmleTax, actualTax);
+    }
+
+    @Test
+    void invokeInvoiceFactoryMethodForGivenClient() {
+        // given
+        InvoiceRequest request = new InvoiceRequest(SAMPLE_CLIENT_DATA);
+        when(factory.create(SAMPLE_CLIENT_DATA)).thenReturn(new Invoice(Id.generate(), SAMPLE_CLIENT_DATA));
+
+        // when
+        keeper.issuance(request, taxPolicy);
+
+        // then
+        verify(factory).create(clientDataArgumentCaptor.capture());
+        ClientData clientData = clientDataArgumentCaptor.getAllValues().get(0);
+        assertEquals(SAMPLE_CLIENT_DATA, clientData);
     }
 
 }
