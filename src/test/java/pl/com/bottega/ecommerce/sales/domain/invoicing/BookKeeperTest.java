@@ -124,4 +124,15 @@ class BookKeeperTest {
         assertEquals(expectedCount, actualInvoiceCount);
     }
 
+    @Test
+    void invokeTaxMethodForEmptyInvoiceRequest() {
+
+        InvoiceRequest request = new InvoiceRequest(SAMPLE_CLIENT_DATA);
+        when(factory.create(SAMPLE_CLIENT_DATA)).thenReturn(new Invoice(Id.generate(), SAMPLE_CLIENT_DATA));
+
+        keeper.issuance(request, taxPolicy);
+
+        verify(taxPolicy, times(0)).calculateTax(any(ProductType.class), any(Money.class));
+    }
+
 }
